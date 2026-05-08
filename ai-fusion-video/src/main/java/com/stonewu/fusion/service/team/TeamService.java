@@ -9,19 +9,34 @@ import com.stonewu.fusion.entity.team.TeamMember;
 import com.stonewu.fusion.enums.team.TeamMemberRoleEnum;
 import com.stonewu.fusion.mapper.team.TeamMemberMapper;
 import com.stonewu.fusion.mapper.team.TeamMapper;
+import com.stonewu.fusion.security.SecurityUtils;
+import com.stonewu.fusion.security.TokenService;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TeamService {
 
+    private static final int OWNER_TYPE_TEAM = 2;
+
     private final TeamMapper teamMapper;
     private final TeamMemberMapper teamMemberMapper;
+    private final TokenService tokenService;
+
+    @Data
+    @AllArgsConstructor
+    public static class OwnerScope {
+        private Integer ownerType;
+        private Long ownerId;
+    }
 
     @Transactional
     public Team createTeam(String name, String description, Long ownerUserId) {
@@ -51,6 +66,84 @@ public class TeamService {
             throw new BusinessException(500, "默认团队不存在，请先完成管理员初始化");
         }
         return team;
+    }
+
+    public Long getCurrentTeamIdByUser(Long userId) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        Long authenticatedTeamId = SecurityUtils.getCurrentTeamId();
+        if (currentUserId != null && currentUserId.equals(userId)
+                && authenticatedTeamId != null
+                && isUserInTeam(authenticatedTeamId, userId)) {
+            return authenticatedTeamId;
+        }
+        TeamMember member = teamMemberMapper.selectOne(new LambdaQueryWrapper<TeamMember>()
+                .eq(TeamMember::getUserId, userId)
+                .eq(TeamMember::getStatus, 1)
+                .orderByAsc(TeamMember::getTeamId)
+                .orderByAsc(TeamMember::getId)
+                .last("LIMIT 1"));
+        return member != null ? member.getTeamId() : null;
+    }
+
+    public Long getRequiredCurrentTeamIdByUser(Long userId) {
+        Long teamId = getCurrentTeamIdByUser(userId);
+        if (teamId == null) {
+            throw new BusinessException(404, "当前用户未加入任何团队");
+        }
+        return teamId;
+    }
+
+    public OwnerScope getRequiredCurrentOwnerScopeByUser(Long userId) {
+        return new OwnerScope(OWNER_TYPE_TEAM, getRequiredCurrentTeamIdByUser(userId));
+    }
+
+    @Transactional
+    public void switchCurrentTeam(Long userId, Long teamId, String accessToken) {
+        if (!isUserInTeam(teamId, userId)) {
+            throw new BusinessException(403, "无权切换到该团队");
+        }
+        boolean updated = tokenService.updateCurrentTeam(accessToken, userId, teamId);
+        if (!updated) {
+            throw new BusinessException(401, "登录态已失效，请重新登录");
+        }
+        SecurityUtils.refreshCurrentTeamId(teamId);
+    }
+
+    public boolean isUserInTeam(Long teamId, Long userId) {
+        if (teamId == null) {
+            return false;
+        }
+        return teamMemberMapper.exists(new LambdaQueryWrapper<TeamMember>()
+                .eq(TeamMember::getTeamId, teamId)
+                .eq(TeamMember::getUserId, userId)
+                .eq(TeamMember::getStatus, 1));
+    }
+
+    public List<Long> listMemberUserIds(Long teamId) {
+        if (teamId == null) {
+            return List.of();
+        }
+        return teamMemberMapper.selectList(new LambdaQueryWrapper<TeamMember>()
+                        .eq(TeamMember::getTeamId, teamId)
+                        .eq(TeamMember::getStatus, 1))
+                .stream()
+                .map(TeamMember::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public boolean isUserInSingleTeam(Long userId) {
+        Team team = getSingleTeam();
+        if (team == null) {
+            return false;
+        }
+        return teamMemberMapper.exists(new LambdaQueryWrapper<TeamMember>()
+                .eq(TeamMember::getTeamId, team.getId())
+                .eq(TeamMember::getUserId, userId));
+    }
+
+    public List<Long> listSingleTeamMemberUserIds() {
+        return listMemberUserIds(getRequiredSingleTeam().getId());
     }
 
     @Transactional

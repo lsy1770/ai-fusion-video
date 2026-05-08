@@ -4,6 +4,7 @@ import com.stonewu.fusion.common.CommonResult;
 import com.stonewu.fusion.controller.system.vo.LoginRespVO;
 import com.stonewu.fusion.entity.system.User;
 import com.stonewu.fusion.security.TokenService;
+import com.stonewu.fusion.service.team.TeamService;
 import com.stonewu.fusion.service.system.SystemConfigService;
 import com.stonewu.fusion.service.system.UserService;
 
@@ -32,6 +33,7 @@ public class SystemInitController {
     private final TokenService tokenService;
     private final UserService userService;
     private final SystemConfigService systemConfigService;
+    private final TeamService teamService;
 
     @GetMapping("/status")
     @Operation(summary = "获取系统初始化状态")
@@ -47,7 +49,8 @@ public class SystemInitController {
         User user = userService.initializeAdmin(reqVO.getUsername(), reqVO.getPassword(), reqVO.getNickname());
 
         // 自动登录
-        TokenService.TokenPair tokenPair = tokenService.createToken(user.getId(), user.getUsername());
+        Long currentTeamId = teamService.getCurrentTeamIdByUser(user.getId());
+        TokenService.TokenPair tokenPair = tokenService.createToken(user.getId(), user.getUsername(), currentTeamId);
         return success(LoginRespVO.builder()
                 .accessToken(tokenPair.getAccessToken())
                 .refreshToken(tokenPair.getRefreshToken())

@@ -26,6 +26,7 @@ import com.stonewu.fusion.controller.system.vo.LoginReqVO;
 import com.stonewu.fusion.controller.system.vo.RegisterReqVO;
 import com.stonewu.fusion.controller.system.vo.ProfileUpdateReqVO;
 import com.stonewu.fusion.controller.system.vo.ChangePasswordReqVO;
+import com.stonewu.fusion.service.team.TeamService;
 import com.stonewu.fusion.service.system.UserService;
 
 import java.util.List;
@@ -44,6 +45,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
     private final UserService userService;
+    private final TeamService teamService;
 
     @PostMapping("/login")
     @Operation(summary = "登录")
@@ -52,7 +54,8 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(reqVO.getUsername(), reqVO.getPassword())
         );
         SecurityUserDetails userDetails = (SecurityUserDetails) authentication.getPrincipal();
-        TokenService.TokenPair tokenPair = tokenService.createToken(userDetails.getUserId(), userDetails.getUsername());
+        Long currentTeamId = teamService.getCurrentTeamIdByUser(userDetails.getUserId());
+        TokenService.TokenPair tokenPair = tokenService.createToken(userDetails.getUserId(), userDetails.getUsername(), currentTeamId);
 
         User user = userService.getById(userDetails.getUserId());
         return success(buildLoginResp(tokenPair, user));
@@ -65,7 +68,8 @@ public class AuthController {
             throw new BusinessException(400, "两次输入的密码不一致");
         }
         User user = userService.register(reqVO.getUsername(), reqVO.getPassword(), reqVO.getNickname());
-        TokenService.TokenPair tokenPair = tokenService.createToken(user.getId(), user.getUsername());
+        Long currentTeamId = teamService.getCurrentTeamIdByUser(user.getId());
+        TokenService.TokenPair tokenPair = tokenService.createToken(user.getId(), user.getUsername(), currentTeamId);
         return success(buildLoginResp(tokenPair, user));
     }
 
