@@ -8,6 +8,7 @@ import {
   Images,
   Settings,
   Bell,
+  Github,
   LogOut,
   Menu,
   X,
@@ -195,7 +196,7 @@ export function AppHeader() {
         rightContent={
           <div className="flex items-center gap-2 justify-end">
             {/* 主题切换按钮 */}
-            <AnimatedThemeToggler className="text-muted-foreground hover:text-foreground rounded-xl hover:bg-foreground/5 transition-colors" />
+            <AnimatedThemeToggler className="rounded-xl text-violet-500 hover:text-violet-600 hover:bg-violet-500/10 dark:text-violet-300 dark:hover:text-violet-200 dark:hover:bg-violet-400/10 transition-colors" />
 
             {/* 通知按钮 */}
             <button
@@ -210,10 +211,10 @@ export function AppHeader() {
               }}
               className={cn(
                 "relative p-2 rounded-xl transition-colors",
-                "text-muted-foreground hover:text-foreground",
+                "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10 dark:text-amber-300 dark:hover:text-amber-200 dark:hover:bg-amber-400/10",
                 panelExpanded
-                  ? "bg-foreground/10 text-foreground"
-                  : "hover:bg-foreground/5"
+                  ? "bg-amber-500/15 text-amber-600 dark:bg-amber-400/15 dark:text-amber-200"
+                  : ""
               )}
             >
               <Bell className="h-5 w-5" />
@@ -240,6 +241,20 @@ export function AppHeader() {
 
             {/* 通知面板 */}
             <NotificationPanel anchorRef={bellRef} />
+
+            <a
+              href="https://github.com/Stonewuu/ai-fusion-video"
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                "p-2 rounded-xl transition-colors",
+                "text-sky-500 hover:text-sky-600 hover:bg-sky-500/10 dark:text-sky-300 dark:hover:text-sky-200 dark:hover:bg-sky-400/10"
+              )}
+              aria-label="打开 GitHub 仓库"
+              title="GitHub"
+            >
+              <Github className="h-5 w-5" />
+            </a>
 
             {/* 用户头像下拉菜单 */}
             <UserAvatarDropdown

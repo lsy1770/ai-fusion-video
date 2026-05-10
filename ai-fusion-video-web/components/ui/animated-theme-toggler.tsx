@@ -132,7 +132,7 @@ export const AnimatedThemeToggler = ({ className }: AnimatedThemeTogglerProps) =
       onClick={onToggle}
       aria-label="切换主题"
       className={cn(
-        "flex items-center justify-center p-2 rounded-full outline-none focus:outline-none active:outline-none focus:ring-0 cursor-pointer",
+        "flex items-center justify-center p-2 rounded-full outline-none focus:outline-none active:outline-none focus:ring-0 cursor-pointer text-foreground",
         className
       )}
       type="button"
@@ -148,7 +148,7 @@ export const AnimatedThemeToggler = ({ className }: AnimatedThemeTogglerProps) =
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.33 }}
-              className="text-foreground"
+              className="text-current"
             >
               <Sun className="h-5 w-5" />
             </motion.span>
@@ -159,7 +159,7 @@ export const AnimatedThemeToggler = ({ className }: AnimatedThemeTogglerProps) =
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.33 }}
-              className="text-foreground"
+              className="text-current"
             >
               <Moon className="h-5 w-5" />
             </motion.span>
